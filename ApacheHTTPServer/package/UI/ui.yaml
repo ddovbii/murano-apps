@@ -18,6 +18,15 @@ Templates:
         type: io.murano.resources.ExistingNeutronNetwork
       internalNetworkName: $.instanceConfiguration.network[0]
       internalSubnetworkName: $.instanceConfiguration.network[1]
+  bootVolumes:
+    - volume:
+        ?:
+          type: io.murano.resources.CinderVolume
+        size: $.instanceConfiguration.volSize
+        sourceImage: $.instanceConfiguration.osImage
+      bootIndex: 0
+      deviceName: vda
+      deviceType: disk
 
 Application:
   ?:
@@ -28,7 +37,6 @@ Application:
       type: io.murano.resources.LinuxMuranoInstance
     name: generateHostname($.instanceConfiguration.unitNamingPattern, 1)
     flavor: $.instanceConfiguration.flavor
-    image: $.instanceConfiguration.osImage
     keyname: $.instanceConfiguration.keyPair
     availabilityZone: $.instanceConfiguration.availabilityZone
     assignFloatingIp: $.appConfiguration.assignFloatingIP
@@ -36,6 +44,7 @@ Application:
       useEnvironmentNetwork: $.instanceConfiguration.network[0]=null
       useFlatNetwork: false
       customNetworks: switch($.instanceConfiguration.network[0], $=null=>list(), $!=null=>$customJoinNet)
+    blockDevices: $bootVolumes
 
 Forms:
   - appConfiguration:
@@ -81,6 +90,12 @@ Forms:
           description: >-
             Select valid image for the application. Image should already be prepared and
             registered in glance.
+        - name: volSize
+          type: integer
+          label: Size of volume
+          required: true
+          description: >-
+            Specify the size of volume which is going to be created from image
         - name: keyPair
           type: keypair
           label: Key Pair
